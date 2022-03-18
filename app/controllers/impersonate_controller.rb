@@ -2,7 +2,7 @@ class ImpersonateController < ApplicationController
   include SecurityHelper
   
   # This function checks if the logged in user is a student or not. If it is a student, do not allow the impersonate mode.
-  # If the logged in user has the role or anything other than the student, we allow that user ti use the impersonate mode.
+  # If the logged in user has the role or anything other than the student, we allow that user to use the impersonate mode.
 
   def action_allowed?
     # Check for TA privileges first since TA's also have student privileges.
@@ -24,21 +24,22 @@ class ImpersonateController < ApplicationController
     @users = session[:user].get_available_users(params[:user][:name])
     render inline: "<%= auto_complete_result @users, 'name' %>", layout: false
   end
-
-  # Allows the user to start the session as the impersonated user
+ 
+  # Called whenever we want to enter the impersonate mode in the application.
   def start
     puts "Start sesh"
     flash[:error] = "This page doesn't take any query string." unless request.GET.empty?
   end
 
   # Method to overwrite the session details that are corresponding to the user or one being impersonated
-  # Need more info on how the other if else works
+  # The first 'if' statement is executed if the logged in user tried to access the impersonate feature from his account.
+  # The 'elsif' statement is executed if the user is impersonating someone and then tried to impersonate another person.
+  # The 'else' statement is executed if...
 
   def overwrite_session
-    # If not impersonatable, then original user's session remains
+    # puts params.inspect
     if params[:impersonate].nil?
       puts "Inside If"
-      # E1991 : check whether instructor is currently in anonymized view
       user = User.anonymized_view?(session[:ip]) ? User.real_user_from_anonymized_name(params[:user][:name]) : User.find_by(name: params[:user][:name])
       session[:super_user] = session[:user] if session[:super_user].nil?
       AuthController.clear_user_info(session, nil)
@@ -47,7 +48,6 @@ class ImpersonateController < ApplicationController
       session[:user] = user
     elsif !params[:impersonate][:name].empty?
       puts "Inside Elif"
-      # E1991 : check whether instructor is currently in anonymized view
       user = User.anonymized_view?(session[:ip]) ? User.real_user_from_anonymized_name(params[:impersonate][:name]) : User.find_by(name: params[:impersonate][:name])
       AuthController.clear_user_info(session, nil)
       session[:user] = user
