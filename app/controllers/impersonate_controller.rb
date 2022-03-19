@@ -40,7 +40,8 @@ class ImpersonateController < ApplicationController
     user = User.anonymized_view?(session[:ip]) ? User.real_user_from_anonymized_name(params[parameter][:name]) : User.find_by(name: params[parameter][:name])
   end
 
-  def generate_session
+  def generate_session(user)
+    AuthController.clear_user_info(session, nil)
     session[:original_user] = @original_user
     session[:impersonate] = true
     session[:user] = user
@@ -56,12 +57,7 @@ class ImpersonateController < ApplicationController
       session[:user] = session[:super_user]
       session[:super_user] = nil
     end
-    # AuthController.clear_user_info(session, nil)
-    # session = generate_session
-    AuthController.clear_user_info(session, nil)
-    session[:original_user] = @original_user
-    session[:impersonate] = true
-    session[:user] = user
+    generate_session(user)
   end
 
   # Checking if special characters are present in the username provided, only alphanumeric should be used
